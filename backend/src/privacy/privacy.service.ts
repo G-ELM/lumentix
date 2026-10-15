@@ -17,7 +17,6 @@ import { LoyaltyAccount } from '../loyalty/entities/loyalty-account.entity';
 import { LoyaltyTransaction } from '../loyalty/entities/loyalty-transaction.entity';
 import { LoyaltyDiscount } from '../loyalty/entities/loyalty-discount.entity';
 import { InsurancePolicyEntity } from '../insurance/entities/insurance-policy.entity';
-import { InsuranceClaim } from '../insurance/entities/insurance-claim.entity';
 import { UserAchievement } from '../gamification/entities/user-achievement.entity';
 import { UserBadge } from '../gamification/entities/user-badge.entity';
 import { SocialProfile } from '../social/entities/social-profile.entity';
@@ -43,7 +42,6 @@ export interface UserDataExport {
   loyaltyDiscounts: LoyaltyDiscount[];
   // Insurance
   insurancePolicies: InsurancePolicyEntity[];
-  insuranceClaims: InsuranceClaim[];
   // Gamification
   achievements: UserAchievement[];
   badges: UserBadge[];
@@ -90,8 +88,6 @@ export class PrivacyService {
     private readonly loyaltyDiscountRepository: Repository<LoyaltyDiscount>,
     @InjectRepository(InsurancePolicyEntity)
     private readonly insurancePolicyRepository: Repository<InsurancePolicyEntity>,
-    @InjectRepository(InsuranceClaim)
-    private readonly insuranceClaimRepository: Repository<InsuranceClaim>,
     @InjectRepository(UserAchievement)
     private readonly userAchievementRepository: Repository<UserAchievement>,
     @InjectRepository(UserBadge)
@@ -122,7 +118,6 @@ export class PrivacyService {
       loyaltyTransactions,
       loyaltyDiscounts,
       insurancePolicies,
-      insuranceClaims,
       userAchievements,
       userBadges,
       socialProfile,
@@ -137,7 +132,6 @@ export class PrivacyService {
       this.loyaltyTransactionRepository.find({ where: { userId } }),
       this.loyaltyDiscountRepository.find({ where: { userId } }),
       this.insurancePolicyRepository.find({ where: { userId } }),
-      this.insuranceClaimRepository.find({ where: { claimantUserId: userId } }),
       this.userAchievementRepository.find({ where: { userId } }),
       this.userBadgeRepository.find({ where: { userId } }),
       this.socialProfileRepository.findOne({ where: { userId } }),
@@ -163,7 +157,6 @@ export class PrivacyService {
       loyaltyTransactions,
       loyaltyDiscounts,
       insurancePolicies,
-      insuranceClaims,
       achievements: userAchievements,
       badges: userBadges,
       socialProfile,

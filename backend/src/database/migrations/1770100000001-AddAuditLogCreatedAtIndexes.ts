@@ -12,8 +12,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * - Single [createdAt] index for retention prune queries
  * - Composite [userId, createdAt] index for user-scoped log listings
  */
-export class AddAuditLogCreatedAtIndexes1770100000000 implements MigrationInterface {
-  name = 'AddAuditLogCreatedAtIndexes1770100000000';
+export class AddAuditLogCreatedAtIndexes1770100000001 implements MigrationInterface {
+  name = 'AddAuditLogCreatedAtIndexes1770100000001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Single index on createdAt for retention prune queries (and general time-range queries)
