@@ -36,8 +36,6 @@ const UNREGISTERED_MODULE_ALLOWLIST: Record<string, string> = {
  * entry resolves, so remove it then.
  */
 const KNOWN_UNRESOLVED_IMPORTS = new Set<string>([
-  "src/auth/auth.controller.ts -> './guards/local-auth.guard'",
-  "src/auth/auth.controller.ts -> './dto/verify-email.dto'",
   "src/events/cancel-event.e2e-spec.ts -> '../../src/refunds/refund.service'",
   "src/payments/controllers/payment-analytics.controller.ts -> '../../common/decorators/authenticated-user.decorator'",
   "src/payments/multisig/multisig.controller.ts -> '../../auth/interfaces/authenticated-request.interface'",

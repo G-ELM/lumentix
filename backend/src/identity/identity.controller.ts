@@ -159,7 +159,7 @@ export class IdentityController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
   @ApiOperation({
-    summary: 'Check a user's credential for event entry (organizer / admin)',
+    summary: "Check a user's credential for event entry (organizer / admin)",
     description:
       'Organizer or admin endpoint. Checks whether the specified user holds ' +
       'any active verified credential (non-revoked, non-expired). ' +

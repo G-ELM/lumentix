@@ -67,10 +67,17 @@ export class MailerService {
   }
 
   async send(options: SendMailOptions): Promise<void> {
-    const html = this.templateService.render(options.template, {
-      ...options.context,
-      subject: options.subject,
-    });
+    let html: string;
+    if (options.template) {
+      html = this.templateService.render(options.template, {
+        ...options.context,
+        subject: options.subject,
+      });
+    } else if (options.html) {
+      html = options.html;
+    } else {
+      throw new Error('MailerService.send requires either "template" or "html".');
+    }
 
     await this.transporter.sendMail({
       from: this.mailFrom,
