@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatMessage } from './entities/chat-message.entity';
-import { RedisService } from '../common/redis/redis.service';
+import Redis from 'ioredis';
+import { REDIS_CLIENT } from '../common/redis/redis.provider';
 
 @Injectable()
 export class ChatService {
@@ -16,7 +17,7 @@ export class ChatService {
   constructor(
     @InjectRepository(ChatMessage)
     private readonly chatRepo: Repository<ChatMessage>,
-    private readonly redisService: RedisService,
+    @Inject(REDIS_CLIENT) private readonly redisService: Redis,
   ) {}
 
   connect_chat_socket(eventId: string, userId: string) {

@@ -26,7 +26,7 @@ import {
   FraudFlagReason,
 } from './entities/flagged-transaction.entity';
 import { UserRole } from '../users/enums/user-role.enum';
-import { Roles } from '../common/decorators/roles.decorator';
+import { Roles, Role } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 
 @ApiTags('Fraud Detection')

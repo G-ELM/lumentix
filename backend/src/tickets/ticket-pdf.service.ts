@@ -26,15 +26,16 @@ export class TicketPdfService {
     userEmail: string,
     qrDataUrl: string,
   ): Promise<string> {
-    return new Promise(async (resolve, reject) => {
+    const name = `ticket-${ticket.id}.pdf`;
+    const uploadPath = process.env.UPLOAD_PATH ?? './uploads';
+    const dest = path.join(uploadPath, 'tickets', name);
+
+    // Ensure directory exists
+    await fs.promises.mkdir(path.dirname(dest), { recursive: true });
+
+    return new Promise<string>((resolve, reject) => {
       try {
         const doc = new PDFDocument({ size: 'A5', margin: 30 });
-        const name = `ticket-${ticket.id}.pdf`;
-        const uploadPath = process.env.UPLOAD_PATH ?? './uploads';
-        const dest = path.join(uploadPath, 'tickets', name);
-
-        // Ensure directory exists
-        await fs.promises.mkdir(path.dirname(dest), { recursive: true });
 
         const stream = fs.createWriteStream(dest);
         doc.pipe(stream);
@@ -73,7 +74,7 @@ export class TicketPdfService {
           reject(err);
         });
       } catch (err) {
-        reject(err);
+        reject(err instanceof Error ? err : new Error(String(err)));
       }
     });
   }

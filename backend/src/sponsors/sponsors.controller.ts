@@ -231,7 +231,7 @@ export class EventSponsorsController {
       ],
     },
   })
-  getLeaderboard(@Param('eventId', ParseUUIDPipe) eventId: string) {
+  listEventSponsors(@Param('eventId', ParseUUIDPipe) eventId: string) {
     return this.sponsorsService.getEventLeaderboard(eventId);
   }
 
