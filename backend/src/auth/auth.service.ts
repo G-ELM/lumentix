@@ -45,10 +45,12 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<{ access_token: string; refresh_token: string }> {
+    // Self-service registration must never let the caller choose their role:
+    // `createUser` defaults to the least-privileged EVENT_GOER role. Privileged
+    // roles can only be assigned by an admin through the guarded POST /users.
     const user = await this.usersService.createUser({
       email: dto.email,
       password: dto.password,
-      role: dto.role,
     });
     const { access_token } = this.signToken((user as any).id, (user as any).role);
     const refresh_token = await this.issueRefreshToken((user as any).id);

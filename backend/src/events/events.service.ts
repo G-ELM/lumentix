@@ -40,6 +40,7 @@ import { RefundService } from '../payments/refunds/refund.service';
 import { CurrenciesService } from '../currencies/currencies.service';
 import { EventImage } from './entities/event-image.entity';
 import { EventHistory } from './entities/event-history.entity';
+import { HistoricalAnalysisDto } from './dto/historical-analysis.dto';
 import { AddEventImageDto } from './dto/add-event-image.dto';
 import { UpdateImageOrderDto } from './dto/update-image-order.dto';
 import { buildListEventsOptions } from './build-list-events-options';
@@ -86,6 +87,8 @@ export class EventsService {
     private readonly currenciesService: CurrenciesService,
     @InjectRepository(EventSeries)
     private readonly eventSeriesRepository: Repository<EventSeries>,
+    @InjectRepository(EventHistory)
+    private readonly eventHistoryRepository: Repository<EventHistory>,
     @InjectQueue('events') private readonly eventsQueue: Queue,
     private readonly calendarService: CalendarService,
     @Optional() private readonly schedulingService: SchedulingService,
@@ -298,6 +301,153 @@ export class EventsService {
     return saved;
   }
 
+  /**
+   * Archive a completed event: snapshot its history, then transition
+   * COMPLETED → ARCHIVED through the state machine. The snapshot is written
+   * before the status changes so the recorded data reflects the final state of
+   * the live event.
+   */
+  async archiveCompletedEvent(id: string, callerId: string): Promise<Event> {
+    const event = await this.getEventById(id);
+    if (event.organizerId !== callerId) {
+      throw new ForbiddenException('You are not the organiser of this event.');
+    }
+    if (event.status !== EventStatus.COMPLETED) {
+      throw new BadRequestException('Only completed events can be archived.');
+    }
+
+    this.eventStateService.validateTransition(event.status, EventStatus.ARCHIVED);
+
+    await this.preserveEventHistory(id, callerId);
+
+    event.status = EventStatus.ARCHIVED;
+    event.archivedAt = new Date();
+    const saved = await this.eventRepository.save(event);
+    await this.eventCacheService.invalidateCacheEntry(id);
+
+    await this.auditService.log({
+      action: AuditAction.EVENT_ARCHIVED,
+      userId: callerId,
+      resourceId: id,
+    });
+
+    return saved;
+  }
+
+  /**
+   * Capture a durable snapshot of an event (event fields plus ticket, payment
+   * and sponsorship aggregates) in `event_history` for later analysis.
+   */
+  async preserveEventHistory(id: string, callerId: string): Promise<EventHistory> {
+    const event = await this.getEventById(id);
+    if (event.organizerId !== callerId) {
+      throw new ForbiddenException('You are not the organiser of this event.');
+    }
+
+    const stats = await this.computeEventStats(event);
+
+    const snapshot: Record<string, unknown> = {
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      organizerId: event.organizerId,
+      category: event.category,
+      status: event.status,
+      location: event.location,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      maxAttendees: event.maxAttendees,
+      ticketPrice: event.ticketPrice,
+      currency: event.currency,
+    };
+
+    const history = this.eventHistoryRepository.create({
+      eventId: id,
+      snapshot,
+      ticketSummary: {
+        sold: stats.ticketsSold,
+        used: stats.ticketsUsed,
+        refunded: stats.ticketsRefunded,
+        remainingCapacity: stats.remainingCapacity,
+      },
+      paymentSummary: {
+        totalRevenue: stats.totalRevenue,
+        refundCount: stats.refundCount,
+      },
+      sponsorshipSummary: {
+        totalSponsorship: stats.totalSponsorship,
+      },
+      totalTicketsSold: stats.ticketsSold,
+      totalTicketsUsed: stats.ticketsUsed,
+      totalRevenue: stats.totalRevenue,
+      totalSponsorship: stats.totalSponsorship,
+    });
+
+    const saved = await this.eventHistoryRepository.save(history);
+
+    await this.auditService.log({
+      action: AuditAction.EVENT_HISTORY_PRESERVED,
+      userId: callerId,
+      resourceId: id,
+    });
+
+    return saved;
+  }
+
+  /**
+   * Query preserved event history for trend analysis. Filters map onto the
+   * event's organizer/category (via the joined event) and the archival date.
+   */
+  async enableHistoricalAnalysis(
+    filterDto: HistoricalAnalysisDto,
+  ): Promise<PaginatedResult<EventHistory>> {
+    const page = filterDto.page ?? 1;
+    const limit = filterDto.limit ?? 10;
+
+    const qb = this.eventHistoryRepository
+      .createQueryBuilder('eh')
+      .leftJoinAndSelect('eh.event', 'event');
+
+    if (filterDto.organizerId) {
+      qb.andWhere('event.organizerId = :organizerId', {
+        organizerId: filterDto.organizerId,
+      });
+    }
+
+    if (filterDto.category) {
+      qb.andWhere('event.category = :category', {
+        category: filterDto.category,
+      });
+    }
+
+    if (filterDto.search) {
+      qb.andWhere(
+        '(event.title ILIKE :search OR event.description ILIKE :search)',
+        { search: `%${filterDto.search}%` },
+      );
+    }
+
+    if (filterDto.fromDate) {
+      qb.andWhere('eh.archivedAt >= :fromDate', {
+        fromDate: new Date(filterDto.fromDate),
+      });
+    }
+
+    if (filterDto.toDate) {
+      qb.andWhere('eh.archivedAt <= :toDate', {
+        toDate: new Date(filterDto.toDate),
+      });
+    }
+
+    qb.orderBy('eh.archivedAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return { data, total, page, limit };
+  }
+
   async cancelEvent(id: string, callerId: string): Promise<{ status: string; jobId: string | number; eventId: string }> {
     const event = await this.getEventById(id);
     if (event.organizerId !== callerId) {
@@ -417,6 +567,16 @@ export class EventsService {
     const event = await this.eventRepository.findOne({ where: { id } });
     if (!event) throw new NotFoundException(`Event with id "${id}" not found`);
     if (event.organizerId !== callerId) throw new ForbiddenException('You are not the organiser of this event.');
+    return this.computeEventStats(event);
+  }
+
+  /**
+   * Aggregate ticket, payment and sponsorship figures for an already-loaded
+   * event. Split out of `getEventStats` so history snapshots can reuse the
+   * exact same numbers without re-fetching the event.
+   */
+  private async computeEventStats(event: Event): Promise<EventStatsResponseDto> {
+    const { id } = event;
     const [ticketStats, paymentStats, sponsorStats] = await Promise.all([
       this.ticketRepository
         .createQueryBuilder('t').select('t.status', 'status').addSelect('COUNT(*)', 'count')

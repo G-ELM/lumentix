@@ -26,6 +26,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { RequestRoleDto } from './dto/request-role.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from './enums/user-role.enum';
@@ -33,7 +34,7 @@ import { UpdateNotificationPreferencesDto } from './dto/update-notification-pref
 
 @ApiTags('Users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 @ApiResponse({ status: 429, description: 'Too Many Requests' })
 export class UsersController {

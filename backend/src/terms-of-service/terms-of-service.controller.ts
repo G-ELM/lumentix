@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { TermsOfServiceService } from './terms-of-service.service';
 import { SaveEventTosDto } from './dto/save-event-tos.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/enums/user-role.enum';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
@@ -34,7 +35,7 @@ export class TermsOfServiceController {
   }
 
   @Post('apply-template/:templateId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ORGANIZER)
   @ApiBearerAuth()
   @ApiOperation({
@@ -52,7 +53,7 @@ export class TermsOfServiceController {
   }
 
   @Patch()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ORGANIZER)
   @ApiBearerAuth()
   @ApiOperation({
@@ -83,7 +84,7 @@ export class TermsOfServiceController {
   }
 
   @Get('history')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ORGANIZER)
   @ApiBearerAuth()
   @ApiOperation({

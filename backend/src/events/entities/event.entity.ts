@@ -138,6 +138,13 @@ export class Event {
    */
   @Column({ type: 'timestamp', nullable: true })
   cancelledAt: Date | null;
+
+  /**
+   * Timestamp when the event was archived (COMPLETED → ARCHIVED).
+   * NULL means the event has not been archived yet.
+   */
+  @Column({ type: 'timestamp', nullable: true, default: null })
+  archivedAt: Date | null;
   @ManyToMany(() => CategoryEntity, (c) => c.events)
   @JoinTable({ name: 'event_categories' })
   categories: CategoryEntity[];
