@@ -2,6 +2,23 @@ import type { Event, PaginatedResponse } from "@/types/event";
 import type { CreateEventFormValues } from "@/lib/schemas/create-event.schema";
 import type { SponsorTier } from "@/components/SponsorTierCard";
 import type {
+  Achievement,
+  ActivityResult,
+  Challenge,
+  ChallengeParticipation,
+  GamificationProfile,
+  LeaderboardEntry,
+  LeaderboardPeriod,
+  UserAchievement,
+  ActivityType,
+} from "@/types/gamification";
+import type {
+  CancellationReason,
+  InsuranceClaimResult,
+  InsurancePolicy,
+  InsurancePool,
+} from "@/types/insurance";
+import type {
   GiftTicketInput,
   GiftWrapResult,
   UnwrapAnimation,
@@ -348,6 +365,40 @@ export const apiClient = {
 
   logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
 
+  // Gamification — auth is attached by /api/proxy from the session cookie
+  getMyGamificationProfile: () => request<GamificationProfile>("/gamification/profile/me"),
+  getAllAchievements: () => request<Achievement[]>("/gamification/achievements"),
+  getMyAchievements: () => request<UserAchievement[]>("/gamification/achievements/mine"),
+  getLeaderboard: (period: LeaderboardPeriod, limit = 50) =>
+    request<LeaderboardEntry[]>(
+      `/gamification/leaderboard?${new URLSearchParams({ period, limit: String(limit) }).toString()}`,
+    ),
+  getActiveChallenges: () => request<Challenge[]>("/gamification/challenges"),
+  getMyChallenges: () => request<ChallengeParticipation[]>("/gamification/challenges/mine"),
+  joinChallenge: (challengeId: string) =>
+    request<ChallengeParticipation>(`/gamification/challenges/${challengeId}/join`, {
+      method: "POST",
+    }),
+  recordActivity: (body: { activityType: ActivityType; metadata?: Record<string, unknown> }) =>
+    request<ActivityResult>("/gamification/activity", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  // Ticket insurance
+  getMyInsurancePolicies: () => request<InsurancePolicy[]>("/insurance/me"),
+  getInsurancePool: () => request<InsurancePool>("/insurance/pool"),
+  purchaseInsurance: (body: { ticketId: string }) =>
+    request<InsurancePolicy>("/insurance/purchase", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  fileInsuranceClaim: (body: { ticketId: string; cancellationReason: CancellationReason }) =>
+    request<InsuranceClaimResult>("/insurance/claim", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   getSponsorEvent: (id: string) => request<SponsorEventSummary>(`/events/${id}`),
   initiateSponsorship: (eventId: string, body: InitiateSponsorshipInput) =>
     request<InitiateSponsorshipResult>(`/events/${eventId}/sponsors`, {
@@ -359,19 +410,16 @@ export const apiClient = {
       method: "POST",
       body: JSON.stringify({ signedXdr }),
     }),
-  submitReview: (
-    body: { eventId: string; ticketId: string; rating: number; comment?: string },
-    _token?: string,
-  ) =>
+  submitReview: (body: { eventId: string; ticketId: string; rating: number; comment?: string }) =>
     request<any>("/reviews", {
       method: "POST",
       body: JSON.stringify(body),
     }),
 
-  getMyReviews: (_token?: string) =>
+  getMyReviews: () =>
     request<any>("/reviews/me"),
 
-  getOrganizerReputation: (organizerId: string, _token?: string) =>
+  getOrganizerReputation: (organizerId: string) =>
     request<any>(`/reviews/reputation/${organizerId}`),
 
   getEventSentiment: (eventId: string) =>
@@ -390,86 +438,55 @@ export const apiClient = {
       body: JSON.stringify(body),
     }),
 
-  // Terms of Service (Issue #1191)
-  save_event_tos: (eventId: string, body: SaveEventTosInput, token?: string) =>
+  // Terms of Service (Issue #1191) — auth is attached by /api/proxy
+  saveEventTos: (eventId: string, body: SaveEventTosInput) =>
     request<EventTos>(`/events/${eventId}/terms-of-service`, {
       method: "PATCH",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: JSON.stringify(body),
     }),
-  saveEventTos: (eventId: string, body: SaveEventTosInput, token?: string) =>
-    apiClient.save_event_tos(eventId, body, token),
 
-  validate_tos_agreement: (eventId: string, version: number) =>
+  validateTosAgreement: (eventId: string, version: number) =>
     request<boolean>(`/events/${eventId}/terms-of-service/validate/${version}`, {
       method: "POST",
     }),
-  validateTosAgreement: (eventId: string, version: number) =>
-    apiClient.validate_tos_agreement(eventId, version),
 
-  fetch_tos_for_checkout: (eventId: string) =>
-    request<EventTos>(`/events/${eventId}/terms-of-service`),
   fetchTosForCheckout: (eventId: string) =>
-    apiClient.fetch_tos_for_checkout(eventId),
+    request<EventTos>(`/events/${eventId}/terms-of-service`),
 
-  get_tos_templates: (eventId: string = "default") =>
-    request<TosTemplate[]>(`/events/${eventId}/terms-of-service/templates`),
   getTosTemplates: (eventId: string = "default") =>
-    apiClient.get_tos_templates(eventId),
+    request<TosTemplate[]>(`/events/${eventId}/terms-of-service/templates`),
 
-  apply_tos_template: (
-    eventId: string,
-    templateId: string,
-    customOverrides?: Partial<SaveEventTosInput>,
-    token?: string,
-  ) =>
-    request<EventTos>(`/events/${eventId}/terms-of-service/apply-template/${templateId}`, {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: JSON.stringify(customOverrides ?? {}),
-    }),
   applyTosTemplate: (
     eventId: string,
     templateId: string,
     customOverrides?: Partial<SaveEventTosInput>,
-    token?: string,
   ) =>
-    apiClient.apply_tos_template(eventId, templateId, customOverrides, token),
+    request<EventTos>(`/events/${eventId}/terms-of-service/apply-template/${templateId}`, {
+      method: "POST",
+      body: JSON.stringify(customOverrides ?? {}),
+    }),
 
   // Scan Velocity & Gate Throughput (Issue #1195)
-  calculate_scan_velocity: (eventId: string, gateId?: string, token?: string) =>
+  calculateScanVelocity: (eventId: string, gateId?: string) =>
     request<ScanVelocityResult>(
       `/events/${eventId}/scan-analytics/scan-velocity${gateId ? `?gateId=${encodeURIComponent(gateId)}` : ""}`,
-      { headers: token ? { Authorization: `Bearer ${token}` } : {} },
     ),
-  calculateScanVelocity: (eventId: string, gateId?: string, token?: string) =>
-    apiClient.calculate_scan_velocity(eventId, gateId, token),
 
-  track_gate_throughput: (eventId: string, gateId?: string, token?: string) =>
+  trackGateThroughput: (eventId: string, gateId?: string) =>
     request<GateThroughputStats>(
       `/events/${eventId}/scan-analytics/throughput${gateId ? `?gateId=${encodeURIComponent(gateId)}` : ""}`,
-      { headers: token ? { Authorization: `Bearer ${token}` } : {} },
     ),
-  trackGateThroughput: (eventId: string, gateId?: string, token?: string) =>
-    apiClient.track_gate_throughput(eventId, gateId, token),
 
-  fetch_realtime_scan_speed: (eventId: string, gateId?: string, minutesBack: number = 5, token?: string) => {
+  fetchRealtimeScanSpeed: (eventId: string, gateId?: string, minutesBack: number = 5) => {
     const params = new URLSearchParams();
     if (gateId) params.set("gateId", gateId);
     if (minutesBack) params.set("minutesBack", minutesBack.toString());
     const qs = params.toString() ? `?${params.toString()}` : "";
-    return request<ScanMetricData[]>(`/events/${eventId}/scan-analytics/realtime-speed${qs}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    return request<ScanMetricData[]>(`/events/${eventId}/scan-analytics/realtime-speed${qs}`);
   },
-  fetchRealtimeScanSpeed: (eventId: string, gateId?: string, minutesBack: number = 5, token?: string) =>
-    apiClient.fetch_realtime_scan_speed(eventId, gateId, minutesBack, token),
 
-  get_staffing_recommendation: (eventId: string, gateId?: string, token?: string) =>
+  getStaffingRecommendation: (eventId: string, gateId?: string) =>
     request<StaffingRecommendation>(
       `/events/${eventId}/scan-analytics/staffing-recommendation${gateId ? `?gateId=${encodeURIComponent(gateId)}` : ""}`,
-      { headers: token ? { Authorization: `Bearer ${token}` } : {} },
     ),
-  getStaffingRecommendation: (eventId: string, gateId?: string, token?: string) =>
-    apiClient.get_staffing_recommendation(eventId, gateId, token),
 };

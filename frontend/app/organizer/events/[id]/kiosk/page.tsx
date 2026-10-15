@@ -16,7 +16,7 @@ export default function KioskPage({ params }: { params: { id: string } }) {
   const [fullscreenMessage, setFullscreenMessage] = useState("");
 
   // eslint-disable-next-line @typescript-eslint/naming-convention -- Public function name specified by the issue.
-  async function launch_kiosk_mode() {
+  async function launchKioskMode() {
     try {
       if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
       setFullscreenMessage("");
@@ -51,7 +51,7 @@ export default function KioskPage({ params }: { params: { id: string } }) {
             <h1 className="text-lg font-semibold text-gray-300">Gate Check-In Kiosk</h1>
             <p className="text-xs text-gray-500">Event {params.id}</p>
           </div>
-          <button type="button" onClick={launch_kiosk_mode} className="min-h-12 rounded-xl border border-white/30 px-4">Enter full-screen</button>
+          <button type="button" onClick={launchKioskMode} className="min-h-12 rounded-xl border border-white/30 px-4">Enter full-screen</button>
           <Link
             onClick={() => { if (document.fullscreenElement) void document.exitFullscreen().catch(() => {}); }}
             href={`/organizer/events/${params.id}/attendees`}

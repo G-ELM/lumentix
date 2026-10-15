@@ -10,11 +10,10 @@ import {
 
 interface TermsOfServiceManagerProps {
   eventId: string;
-  token?: string;
   onSaved?: (tos: EventTos) => void;
 }
 
-export function TermsOfServiceManager({ eventId, token, onSaved }: TermsOfServiceManagerProps) {
+export function TermsOfServiceManager({ eventId, onSaved }: TermsOfServiceManagerProps) {
   const [currentTos, setCurrentTos] = useState<EventTos | null>(null);
   const [templates, setTemplates] = useState<TosTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
@@ -32,8 +31,8 @@ export function TermsOfServiceManager({ eventId, token, onSaved }: TermsOfServic
       try {
         setIsLoading(true);
         const [templatesRes, tosRes] = await Promise.allSettled([
-          apiClient.get_tos_templates(eventId),
-          apiClient.fetch_tos_for_checkout(eventId),
+          apiClient.getTosTemplates(eventId),
+          apiClient.fetchTosForCheckout(eventId),
         ]);
 
         if (templatesRes.status === "fulfilled") {
@@ -78,7 +77,7 @@ export function TermsOfServiceManager({ eventId, token, onSaved }: TermsOfServic
       setIsSaving(true);
       setMessage(null);
 
-      const saved = await apiClient.save_event_tos(eventId, formData, token);
+      const saved = await apiClient.saveEventTos(eventId, formData);
       setCurrentTos(saved);
       onSaved?.(saved);
       setMessage({

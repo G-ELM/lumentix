@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,6 @@ export default function OrganizerScanAnalyticsPage({ params }: { params: { id: s
   const { id } = params;
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const [token, setToken] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (isLoading) return;
@@ -18,8 +17,6 @@ export default function OrganizerScanAnalyticsPage({ params }: { params: { id: s
       router.push(`/login?redirect=/organizer/events/${id}/scan-analytics`);
       return;
     }
-    const t = window.localStorage.getItem("lumentix_access_token") ?? undefined;
-    setToken(t);
   }, [user, isLoading, id, router]);
 
   return (
@@ -37,7 +34,7 @@ export default function OrganizerScanAnalyticsPage({ params }: { params: { id: s
           <span className="text-slate-200">Scan Analytics & Queue Velocity</span>
         </div>
 
-        <ScanVelocityDashboard eventId={id} token={token} />
+        <ScanVelocityDashboard eventId={id} />
       </div>
     </div>
   );

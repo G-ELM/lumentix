@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { detect_viewer_bandwidth, report_buffering_event, switch_bitrate_tier } from '@/lib/streaming/adaptive-bitrate';
+import { detectViewerBandwidth, reportBufferingEvent, switchBitrateTier } from '@/lib/streaming/adaptive-bitrate';
 
 export function AdaptiveStreamPlayer({ eventId, src }: { eventId: string; src: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -21,8 +21,8 @@ export function AdaptiveStreamPlayer({ eventId, src }: { eventId: string; src: s
     const onWaiting = () => { if (!video.paused && waitingAt === undefined) waitingAt = performance.now(); };
     const onPlaying = () => {
       if (waitingAt !== undefined) {
-        void report_buffering_event(eventId, performance.now() - waitingAt,
-          playerRef.current ? detect_viewer_bandwidth(playerRef.current) : 0);
+        void reportBufferingEvent(eventId, performance.now() - waitingAt,
+          playerRef.current ? detectViewerBandwidth(playerRef.current) : 0);
         waitingAt = undefined;
       }
     };
@@ -37,7 +37,7 @@ export function AdaptiveStreamPlayer({ eventId, src }: { eventId: string; src: s
       player.on(Hls.Events.MANIFEST_PARSED, () => setLevels(player!.levels.map((level, index) => ({
         index, label: `${level.height ? `${level.height}p · ` : ''}${Math.round(level.bitrate / 1000)} kbps`,
       }))));
-      player.on(Hls.Events.FRAG_LOADED, () => setBandwidth(detect_viewer_bandwidth(player!)));
+      player.on(Hls.Events.FRAG_LOADED, () => setBandwidth(detectViewerBandwidth(player!)));
       player.on(Hls.Events.ERROR, (_, data) => {
         if (data.fatal) setError('The stream could not be played. Reload to try again.');
       });
@@ -65,7 +65,7 @@ export function AdaptiveStreamPlayer({ eventId, src }: { eventId: string; src: s
       <label>Video quality <select aria-label="Video quality" value={quality} disabled={native || !levels.length}
         className="rounded border p-2 text-black" onChange={event => {
           const level = Number(event.target.value);
-          if (playerRef.current) { switch_bitrate_tier(playerRef.current, level); setQuality(level); }
+          if (playerRef.current) { switchBitrateTier(playerRef.current, level); setQuality(level); }
         }}>
         <option value={-1}>Auto</option>
         {levels.map(level => <option key={level.index} value={level.index}>{level.label}</option>)}
