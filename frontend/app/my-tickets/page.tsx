@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAccessToken, setTokens } from "@/lib/auth/auth";
+import { getAccessToken } from "@/lib/auth/auth";
 import TicketCard, { Ticket } from "@/components/TicketCard";
 import BatchTransferPanel from "@/components/BatchTransferPanel";
 import GiftTicketModal from "@/components/gifting/GiftTicketModal";
