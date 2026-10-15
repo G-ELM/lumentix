@@ -25,3 +25,12 @@ export class UpdateUserPreferencesDto {
   @ApiProperty({ type: () => [PreferenceEntryDto] })
   preferences: PreferenceEntryDto[];
 }
+
+/** Result of replacing a user's preference rows. */
+export class UpdateUserPreferencesResultDto {
+  @ApiProperty({ example: 'uuid' })
+  userId: string;
+
+  @ApiProperty({ example: 3, description: 'Number of preference rows saved.' })
+  saved: number;
+}
