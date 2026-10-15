@@ -22,10 +22,14 @@
     "migration:generate": "typeorm-ts-node-commonjs migration:generate --dataSource src/database/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run --dataSource src/database/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert --dataSource src/database/data-source.ts",
-    "check-migrations": "typeorm-ts-node-commonjs migration:show --dataSource src/database/data-source.ts 2>&1 | tee /tmp/migration-status.txt; grep -q \"\\[ \\]\" /tmp/migration-status.txt && (echo \"Pending migrations found!\" && exit 1) || echo \"All migrations applied\""
+    "check-migrations": "npm run migration:run && typeorm-ts-node-commonjs migration:generate --check --dataSource src/database/data-source.ts src/database/migrations/SchemaDrift"
   },
   "dependencies": {
+    "@keyv/redis": "^5.0.0",
+    "@nest-lab/throttler-storage-redis": "^1.2.0",
+    "@nestjs/axios": "^4.0.0",
     "@nestjs/bull": "^11.0.4",
+    "@nestjs/cache-manager": "^3.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.0.1",
@@ -43,15 +47,17 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "bull": "^4.16.5",
+    "cache-manager": "^7.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
-    "cron": "^3.1.7",
+    "cron": "4.4.0",
+    "date-fns": "^4.1.0",
     "handlebars": "^4.7.8",
     "helmet": "^8.1.0",
     "ioredis": "^5.9.3",
     "joi": "^17.13.3",
+    "keyv": "^5.0.0",
     "multer": "^1.4.5-lts.1",
-    "nestjs-throttler-storage-redis": "^0.5.1",
     "nodemailer": "^8.0.4",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
@@ -61,6 +67,7 @@
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "speakeasy": "^2.0.0",
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
@@ -72,10 +79,10 @@
     "@swc/cli": "^0.6.0",
     "@swc/core": "^1.10.7",
     "@types/bcrypt": "^6.0.0",
-    "@types/handlebars": "^4.1.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/bull": "^3.15.9",
     "@types/express": "^5.0.0",
+    "@types/handlebars": "^4.1.0",
     "@types/helmet": "^0.0.48",
     "@types/ioredis": "^4.28.10",
     "@types/jest": "^29.5.14",
@@ -84,7 +91,9 @@
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
     "@types/qrcode": "^1.5.6",
+    "@types/speakeasy": "^2.0.10",
     "@types/supertest": "^6.0.2",
+    "dotenv": "^16.4.5",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
@@ -109,7 +118,12 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": ["ts-jest", { "diagnostics": false }]
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "diagnostics": false
+        }
+      ]
     },
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
