@@ -2,8 +2,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 
-import { AppModule } from '../../src/app.module';
-import { RefundService } from '../../src/refunds/refund.service';
+import { AppModule } from '../src/app.module';
+import { RefundService } from '../src/payments/refunds/refund.service';
 
 describe('Event Cancellation Flow (e2e)', () => {
   let app: INestApplication;
