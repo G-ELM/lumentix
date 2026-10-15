@@ -150,6 +150,16 @@ export class Event {
   mergedAt: Date | null;
 
   /**
+   * Timestamp when the sponsor escrow was distributed to the organizer.
+   * NULL means the escrow has not been distributed yet. Treated as the
+   * authoritative idempotency guard: it is set atomically (a conditional
+   * UPDATE that only matches while it is NULL) before any Stellar payment
+   * is sent, so the same escrow can never be paid out twice.
+   */
+  @Column({ type: 'timestamp', nullable: true, default: null })
+  escrowDistributedAt: Date | null;
+
+  /**
    * Optional webhook URL for outbound payment status notifications.
    * When set, a signed POST request is sent on each payment status transition.
    */

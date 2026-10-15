@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -189,15 +190,48 @@ export class SponsorsService {
       eventWithSecret.escrowSecretEncrypted,
     );
 
-    const txResponse = await this.stellarService.sendPayment(
-      escrowSecret,
-      organizer.stellarPublicKey,
-      String(total),
-      'XLM',
-    );
+    // Atomically claim the distribution. Only the request that flips
+    // escrowDistributedAt from NULL to a timestamp wins; any concurrent or
+    // retried request sees affected === 0 and is rejected below. This is the
+    // guard that prevents the escrow from ever being paid out twice.
+    const claim = await this.eventRepository
+      .createQueryBuilder()
+      .update(Event)
+      .set({ escrowDistributedAt: new Date() })
+      .where('id = :id', { id: eventId })
+      .andWhere('escrowDistributedAt IS NULL')
+      .execute();
+
+    if (!claim.affected) {
+      throw new ConflictException(
+        'Escrow for this event has already been distributed',
+      );
+    }
+
+    let txResponse: Awaited<ReturnType<StellarService['sendPayment']>>;
+    try {
+      txResponse = await this.stellarService.sendPayment(
+        escrowSecret,
+        organizer.stellarPublicKey,
+        String(total),
+        'XLM',
+      );
+    } catch (err) {
+      // The payout did not happen, so release the claim to allow a retry.
+      await this.eventRepository.update(eventId, {
+        escrowDistributedAt: null,
+      });
+      throw err;
+    }
 
     const txHash =
       typeof txResponse.hash === 'string' ? txResponse.hash : 'unknown';
+
+    // Clear the escrow secret now that the funds have been released, so the
+    // credentials cannot be reused.
+    await this.eventRepository.update(eventId, {
+      escrowSecretEncrypted: null,
+    });
 
     await this.auditService.log({
       action: 'ESCROW_RELEASED',
