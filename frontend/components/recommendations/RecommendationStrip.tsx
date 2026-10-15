@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 import { announceCartUpdate } from "@/lib/a11y";
 import type {
   RecommendationResponse,
@@ -54,10 +55,19 @@ export function RecommendationStrip() {
     };
   }, [user?.id]);
 
-  if (!user?.id) return null;
-  if (!state.data || state.data.recommendations.length === 0) return null;
+  const recommendationCount = state.data?.recommendations.length ?? 0;
 
-  announceCartUpdate(`${state.data.recommendations.length} personalised events`);
+  // Announce once per change in the number of suggestions, not on every render.
+  useEffect(() => {
+    if (recommendationCount > 0) {
+      announceCartUpdate(`${recommendationCount} personalised events`);
+    }
+  }, [recommendationCount]);
+
+  if (!user?.id) return null;
+  if (!state.data || recommendationCount === 0) return null;
+
+  const ranked = [...state.data.recommendations].sort((a, b) => b.score - a.score);
 
   return (
     <aside
@@ -69,12 +79,12 @@ export function RecommendationStrip() {
           Recommended for you
         </h2>
         <span className="text-[11px] text-gray-500 uppercase tracking-wider">
-          {state.data.recommendations.length} suggestions · score match
+          {recommendationCount} suggestions · score match
         </span>
       </div>
 
       <ul className="grid gap-3 sm:grid-cols-2">
-        {state.data.recommendations.map((rec: RecommendationDto) => (
+        {ranked.map((rec: RecommendationDto) => (
           <li key={rec.eventId}>
             <Link
               href={`/events/${rec.eventId}`}
@@ -109,3 +119,5 @@ export function RecommendationStrip() {
     </aside>
   );
 }
+
+export default RecommendationStrip;
