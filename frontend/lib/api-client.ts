@@ -278,8 +278,6 @@ export const apiClient = {
       body: JSON.stringify(body),
     }),
 
-  getMyPayments: () => request<any>("/payments/my-payments"),
-
   getTransactions: (params?: Record<string, string>) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
     return request<any>(`/transactions${qs}`);
