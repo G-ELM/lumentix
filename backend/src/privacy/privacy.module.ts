@@ -12,7 +12,6 @@ import { LoyaltyAccount } from '../loyalty/entities/loyalty-account.entity';
 import { LoyaltyTransaction } from '../loyalty/entities/loyalty-transaction.entity';
 import { LoyaltyDiscount } from '../loyalty/entities/loyalty-discount.entity';
 import { InsurancePolicyEntity } from '../insurance/entities/insurance-policy.entity';
-import { InsuranceClaim } from '../insurance/entities/insurance-claim.entity';
 import { UserAchievement } from '../gamification/entities/user-achievement.entity';
 import { UserBadge } from '../gamification/entities/user-badge.entity';
 import { SocialProfile } from '../social/entities/social-profile.entity';
@@ -32,7 +31,6 @@ import { Payment } from '../payments/entities/payment.entity';
       LoyaltyTransaction,
       LoyaltyDiscount,
       InsurancePolicyEntity,
-      InsuranceClaim,
       UserAchievement,
       UserBadge,
       SocialProfile,
