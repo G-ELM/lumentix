@@ -41,17 +41,14 @@ export class IdempotencyInterceptor implements NestInterceptor {
     }
 
     return next.handle().pipe(
-      tap(async (body) => {
+      tap((body) => {
         const response = {
           status: res.statusCode,
           body,
         };
-        await this.redis.set(
-          cacheKey,
-          JSON.stringify(response),
-          'EX',
-          IDEMPOTENCY_TTL_SECONDS,
-        );
+        void this.redis
+          .set(cacheKey, JSON.stringify(response), 'EX', IDEMPOTENCY_TTL_SECONDS)
+          .catch(() => undefined);
       }),
     );
   }

@@ -63,6 +63,8 @@ import { TestingModule } from './testing/testing.module';
 import { InternalModule } from './common/internal.module';
 import { InternalRoutingModule } from './internal/internal.module';
 import { RateLimitModule } from './common/rate-limit.module';
+import { RedisClientModule } from './common/redis/redis-client.module';
+import { REDIS_CLIENT } from './common/redis/redis.provider';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
 
 
@@ -74,22 +76,18 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
       validationSchema: envValidationSchema,
       validationOptions: { abortEarly: false },
     }),
+    RedisClientModule,
     RateLimitModule,
 
     // ── Redis-backed rate limiting — shared across all instances ──────────────
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      inject: [REDIS_CLIENT],
+      useFactory: (redis: Redis) => ({
         throttlers: [
           { name: 'global', ttl: seconds(60), limit: 100 },
         ],
-        storage: new ThrottlerStorageRedisService(
-          new Redis({
-            host: config.get<string>('REDIS_HOST') ?? 'localhost',
-            port: config.get<number>('REDIS_PORT') ?? 6379,
-          }),
-        ),
+        storage: new ThrottlerStorageRedisService(redis),
       }),
     }),
 

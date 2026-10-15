@@ -128,7 +128,7 @@ export class ExchangeRatesService {
     await this.ratesRepository.delete(id);
   }
 
-  @Cron(CronExpression.EVERY_15_MINUTES)
+  @Cron('0 */15 * * * *') // every 15 minutes (not a CronExpression member)
   async markStaleRates() {
     const threshold = new Date(
       Date.now() - this.staleRateThresholdHours * 60 * 60 * 1000,

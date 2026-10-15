@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
-import { Event } from '../events/entities/event.entity';
+import { Event, EventStatus } from '../events/entities/event.entity';
 import { TicketEntity } from '../tickets/entities/ticket.entity';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { Registration, RegistrationStatus } from '../registrations/entities/registration.entity';
@@ -43,11 +43,12 @@ import {
   RevenueDashboardDto,
   CurrencyRevenue,
   RevenueTimePoint,
+  RevenueBreakdownRow,
+  RevenueReportDto,
 } from './dto/revenue-dashboard.dto';
-import { EventStatus } from '../events/entities/event.entity';
 import { MerchItem } from '../merch/entities/merch-item.entity';
 import { MerchReservation } from '../merch/entities/merch-reservation.entity';
-import { RevenueBreakdownRow, RevenueReportDto } from './dto/revenue-dashboard.dto';
+import * as PDFDocument from 'pdfkit';
 
 /** Minimal shape analyzeAgeDemographics needs; the age-verification module that supplied it was retired (#1023). */
 interface AgeRecord {
@@ -852,7 +853,6 @@ export class AnalyticsService {
       return { contentType: 'text/csv; charset=utf-8', filename: `revenue-${eventId}.csv`, body: Buffer.from(rows.map((row) => row.map(escape).join(',')).join('\n')) };
     }
     return new Promise((resolve, reject) => {
-      const PDFDocument = require('pdfkit');
       const doc = new PDFDocument({ margin: 48 });
       const chunks: Buffer[] = [];
       doc.on('data', (chunk: Buffer) => chunks.push(chunk));
