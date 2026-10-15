@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
   Req,
   ParseUUIDPipe,
   HttpCode,
@@ -34,6 +35,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 import { PaginationDto } from '../common/pagination';
+import { IdempotencyInterceptor } from '../common/interceptors/idempotency.interceptor';
 
 @ApiTags('Sponsors')
 @Controller('events/:eventId/tiers')
@@ -171,11 +173,13 @@ export class SponsorsController {
 
   @Post('distribute')
   @Roles(Role.ORGANIZER, Role.ADMIN)
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Distribute escrow to organizer', description: 'Releases sponsor funds from escrow to the organizer Stellar wallet. Event must be COMPLETED.' })
   @ApiResponse({ status: 201, description: 'Funds distributed' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 409, description: 'Escrow already distributed' })
   distributeEscrow(
     @Param('eventId', ParseUUIDPipe) eventId: string,
     @Req() req: AuthenticatedRequest,
