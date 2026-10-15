@@ -267,7 +267,7 @@ export function renderProvenanceTimeline(transfers: ProvenanceTransfer[]) {
   return (
     <details className="rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-2">
       <summary className="cursor-pointer text-sm font-medium text-gray-300">
-        Ownership history <span className="text-gray-500">({transfers.length} transfer{transfers.length === 1 ? "" : "s"})</span>
+        Ownership history <span className="text-gray-500">{`(${transfers.length} transfer${transfers.length === 1 ? "" : "s"})`}</span>
       </summary>
       {transfers.length === 0 ? (
         <p className="mt-3 text-xs text-gray-500">Original issue. No secondary transfers recorded.</p>

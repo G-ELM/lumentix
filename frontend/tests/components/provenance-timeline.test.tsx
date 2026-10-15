@@ -47,9 +47,12 @@ describe('renderProvenanceTimeline', () => {
   });
 
   it('pluralizes the transfer count', () => {
-    render(<div>{renderProvenanceTimeline([transfers[0]])}</div>);
-    expect(screen.getByText('1 transfer')).toBeTruthy();
+    const single = render(<div>{renderProvenanceTimeline([transfers[0]])}</div>);
+    expect(screen.getByText('(1 transfer)')).toBeTruthy();
+    // Unmount before the second render so the two trees cannot match ambiguously.
+    single.unmount();
+
     render(<div>{renderProvenanceTimeline(transfers)}</div>);
-    expect(screen.getByText('2 transfers')).toBeTruthy();
+    expect(screen.getByText('(2 transfers)')).toBeTruthy();
   });
 });

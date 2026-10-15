@@ -91,12 +91,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 // Mock @stellar/freighter-api
-vi.mock('@stellar/freighter-api', () => ({
-  isConnected: vi.fn(),
-  requestAccess: vi.fn(),
-  getNetworkDetails: vi.fn(),
-  signTransaction: vi.fn(),
-}));
+vi.mock('@stellar/freighter-api', async () => (await import('./mocks/freighter')).freighterModule);
 
 // Mock @stellar/stellar-sdk
 vi.mock('@stellar/stellar-sdk', () => ({

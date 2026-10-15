@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
-const apiGet = vi.fn();
-const apiPatch = vi.fn();
+// vi.mock is hoisted above top-level declarations, so the mock functions must be hoisted too.
+// The page only imports apiGet and apiPatch from the api client.
+const { apiGet, apiPatch } = vi.hoisted(() => ({ apiGet: vi.fn(), apiPatch: vi.fn() }));
 vi.mock('@/lib/api-client', () => ({ apiGet, apiPatch }));
 vi.mock('@/components/AdminNav', () => ({ default: () => <nav data-testid="admin-nav" /> }));
 
