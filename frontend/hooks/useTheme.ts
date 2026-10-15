@@ -1,21 +1,21 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Theme, toggle_color_theme, persist_theme_preference, apply_dark_theme_styles, get_saved_theme } from '../lib/theme';
+import { Theme, toggleColorTheme, persistThemePreference, applyDarkThemeStyles, getSavedTheme } from '../lib/theme';
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
-    const saved = get_saved_theme();
+    const saved = getSavedTheme();
     setTheme(saved);
-    apply_dark_theme_styles(saved);
+    applyDarkThemeStyles(saved);
   }, []);
 
   const toggleTheme = () => {
-    const next = toggle_color_theme(theme);
+    const next = toggleColorTheme(theme);
     setTheme(next);
-    persist_theme_preference(next);
-    apply_dark_theme_styles(next);
+    persistThemePreference(next);
+    applyDarkThemeStyles(next);
   };
 
   return { theme, toggleTheme };

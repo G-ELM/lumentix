@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,6 @@ export default function OrganizerTermsOfServicePage({ params }: { params: { id: 
   const { id } = params;
   const router = useRouter();
   const { user, isLoading } = useAuth();
-  const [token, setToken] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (isLoading) return;
@@ -18,8 +17,6 @@ export default function OrganizerTermsOfServicePage({ params }: { params: { id: 
       router.push(`/login?redirect=/organizer/events/${id}/terms-of-service`);
       return;
     }
-    const t = window.localStorage.getItem("lumentix_access_token") ?? undefined;
-    setToken(t);
   }, [user, isLoading, id, router]);
 
   return (
@@ -37,7 +34,7 @@ export default function OrganizerTermsOfServicePage({ params }: { params: { id: 
           <span className="text-slate-200">Custom Terms of Service</span>
         </div>
 
-        <TermsOfServiceManager eventId={id} token={token} />
+        <TermsOfServiceManager eventId={id} />
       </div>
     </div>
   );

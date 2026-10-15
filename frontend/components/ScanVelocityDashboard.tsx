@@ -11,10 +11,9 @@ import {
 
 interface ScanVelocityDashboardProps {
   eventId: string;
-  token?: string;
 }
 
-export function ScanVelocityDashboard({ eventId, token }: ScanVelocityDashboardProps) {
+export function ScanVelocityDashboard({ eventId }: ScanVelocityDashboardProps) {
   const [selectedGate, setSelectedGate] = useState<string>("all");
   const [velocity, setVelocity] = useState<number>(0);
   const [throughput, setThroughput] = useState<GateThroughputStats | null>(null);
@@ -32,10 +31,10 @@ export function ScanVelocityDashboard({ eventId, token }: ScanVelocityDashboardP
       const gateArg = selectedGate === "all" ? undefined : selectedGate;
 
       const [velocityData, throughputData, speedData, staffingData] = await Promise.allSettled([
-        apiClient.calculate_scan_velocity(eventId, gateArg, token),
-        apiClient.track_gate_throughput(eventId, gateArg, token),
-        apiClient.fetch_realtime_scan_speed(eventId, gateArg, 15, token),
-        apiClient.get_staffing_recommendation(eventId, gateArg, token),
+        apiClient.calculateScanVelocity(eventId, gateArg),
+        apiClient.trackGateThroughput(eventId, gateArg),
+        apiClient.fetchRealtimeScanSpeed(eventId, gateArg, 15),
+        apiClient.getStaffingRecommendation(eventId, gateArg),
       ]);
 
       if (velocityData.status === "fulfilled") {
@@ -57,7 +56,7 @@ export function ScanVelocityDashboard({ eventId, token }: ScanVelocityDashboardP
     } finally {
       setIsLoading(false);
     }
-  }, [eventId, selectedGate, token]);
+  }, [eventId, selectedGate]);
 
   useEffect(() => {
     void loadData();

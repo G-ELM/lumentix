@@ -1,25 +1,25 @@
 export type Theme = 'light' | 'dark';
 
-export function toggle_color_theme(current: Theme): Theme {
+export function toggleColorTheme(current: Theme): Theme {
   return current === 'light' ? 'dark' : 'light';
 }
 
-export function toggle_theme(current?: Theme): Theme {
-  const active = current ?? get_saved_theme();
+export function toggleTheme(current?: Theme): Theme {
+  const active = current ?? getSavedTheme();
   const next = active === 'light' ? 'dark' : 'light';
-  persist_theme_preference(next);
-  apply_theme_tokens(next);
+  persistThemePreference(next);
+  applyThemeTokens(next);
   return next;
 }
 
-export function persist_theme_preference(theme: Theme): void {
+export function persistThemePreference(theme: Theme): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem('theme', theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }
 }
 
-export function apply_theme_tokens(theme: Theme): void {
+export function applyThemeTokens(theme: Theme): void {
   if (typeof window !== 'undefined') {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -37,11 +37,11 @@ export function apply_theme_tokens(theme: Theme): void {
   }
 }
 
-export function apply_dark_theme_styles(theme: Theme): void {
-  apply_theme_tokens(theme);
+export function applyDarkThemeStyles(theme: Theme): void {
+  applyThemeTokens(theme);
 }
 
-export function get_saved_theme(): Theme {
+export function getSavedTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
   return (localStorage.getItem('theme') as Theme) ?? 'light';
 }

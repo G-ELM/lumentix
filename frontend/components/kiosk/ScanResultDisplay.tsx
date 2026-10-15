@@ -11,7 +11,7 @@ function initials(name?: string): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention -- Public function name specified by the issue.
-export function show_attendee_photo(photoUrl?: string): string | undefined {
+export function showAttendeePhoto(photoUrl?: string): string | undefined {
   if (!photoUrl) return undefined;
   try { return new URL(photoUrl).protocol === 'https:' ? photoUrl : undefined; }
   catch { return undefined; }
@@ -19,7 +19,7 @@ export function show_attendee_photo(photoUrl?: string): string | undefined {
 
 function AttendeePhoto({ name, photoUrl }: { name?: string; photoUrl?: string }) {
   const [failed, setFailed] = useState(false);
-  const source = show_attendee_photo(photoUrl);
+  const source = showAttendeePhoto(photoUrl);
   if (source && !failed) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={source} alt={name ? `Photo of ${name}` : 'Attendee photo'}
@@ -32,7 +32,7 @@ function AttendeePhoto({ name, photoUrl }: { name?: string; photoUrl?: string })
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention -- Public function name specified by the issue.
-export function display_scan_result(result: ScanResult): string {
+export function displayScanResult(result: ScanResult): string {
   return result.outcome === 'success' ? 'Checked In' : 'Not Verified';
 }
 
@@ -66,7 +66,7 @@ export function ScanResultDisplay({ result, onDismiss }: ScanResultDisplayProps)
       </div>
 
       <h2 className="text-4xl font-extrabold text-white sm:text-5xl">
-        {display_scan_result(result)}
+        {displayScanResult(result)}
       </h2>
 
       {isSuccess ? (

@@ -55,7 +55,12 @@ export class AdminController {
   // ─── Audit Logs ───────────────────────────────────────────────────────────
 
   @Get('audit-logs')
-  @ApiOperation({ summary: 'List audit log entries' })
+  @ApiOperation({
+    summary: 'List audit log entries',
+    deprecated: true,
+    description:
+      'Deprecated alias that delegates to the same AuditService query as GET /admin/audit, which is the canonical audit API (search, per-user logs and CSV/JSON export).',
+  })
   @ApiResponse({ status: 200, description: 'Audit logs retrieved' })
   listAuditLogs(@Query() dto: ListAuditLogsDto) {
     return this.adminService.listAuditLogs(dto);

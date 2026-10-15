@@ -165,7 +165,6 @@ function SubmitReviewForm({ onSuccess }: { onSuccess: () => void }) {
     try {
       await apiClient.submitReview(
         { eventId: eventId.trim(), ticketId: ticketId.trim(), rating, comment: comment || undefined },
-        getToken(),
       );
       setSuccess('Review submitted and attendance verified!');
       setEventId(''); setTicketId(''); setComment(''); setRating(5);
@@ -272,7 +271,7 @@ function ReputationLookup() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.getOrganizerReputation(orgId.trim(), getToken()) as ReputationScore;
+      const data = await apiClient.getOrganizerReputation(orgId.trim()) as ReputationScore;
       setRep(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Not found.');
@@ -343,7 +342,7 @@ export default function ReviewsPage() {
     if (!t) { setLoading(false); return; }
     setLoading(true);
     try {
-      const data = await apiClient.getMyReviews(t) as PaginatedReviews;
+      const data = await apiClient.getMyReviews() as PaginatedReviews;
       setMyReviews(data.data ?? []);
     } catch { /* empty */ }
     finally { setLoading(false); }
