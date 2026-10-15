@@ -30,11 +30,12 @@ import { TicketGift } from './gifting/ticket-gift.entity';
 import { GiftingService } from './gifting/gifting.service';
 import { GiftingController } from './gifting/gifting.controller';
 import { GiftDeliveryJob } from './gifting/gift-delivery.job';
+import { ResalePriceCeiling } from './resale/resale-price-ceiling.entity';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([TicketEntity, Event, EventSeries, User, ResaleTransaction, FraudFlag, TicketGift]),
+    TypeOrmModule.forFeature([TicketEntity, Event, EventSeries, User, ResaleTransaction, ResalePriceCeiling, FraudFlag, TicketGift]),
     forwardRef(() => PaymentsModule),
     StellarModule,
     NotificationModule,

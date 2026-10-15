@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, IsNull, Repository } from 'typeorm';
 import * as qrcode from 'qrcode';
 
 import { TicketEntity } from './entities/ticket.entity';
@@ -172,7 +172,7 @@ export class TicketsService {
       const eventIds = events.map((e) => e.id);
       const existingTickets = await this.ticketRepo.find({
         where: eventIds.map((eventId) => ({
-          transactionHash: payment.transactionHash,
+          transactionHash: payment.transactionHash ?? IsNull(),
           eventId,
         })),
       });
@@ -543,6 +543,7 @@ export class TicketsService {
 
 
     const previousOwnerId = ticket.ownerId;
+    const previousOwnerPublicKey = ticket.ownerPublicKey;
     const saved = await this.dataSource.transaction(async (em) => {
       ticket.ownerId = recipient.id;
       ticket.ownerPublicKey = recipient.stellarPublicKey;
@@ -551,7 +552,7 @@ export class TicketsService {
         {
           from: previousOwnerId,
           to: recipient.id,
-          fromPublicKey: ticket.ownerPublicKey,
+          fromPublicKey: previousOwnerPublicKey,
           toPublicKey: recipient.stellarPublicKey,
           transactionHash: dto.transactionHash,
           timestamp: new Date().toISOString(),
@@ -636,12 +637,25 @@ export class TicketsService {
         },
       });
 
-      await this.notificationService.notifyUser(t.recipientUserId, {
-        title: 'Ticket Received',
-        body: `You received a ticket for event ${t.eventId}`,
-        type: 'ticket_transferred',
-        data: { ticketId: t.ticketId },
-      });
+      // The transfer is already committed; a notification failure must not undo or fail it.
+      try {
+        const [recipient, event] = await Promise.all([
+          this.userRepo.findOne({ where: { id: t.recipientUserId } }),
+          this.eventRepo.findOne({ where: { id: t.eventId } }),
+        ]);
+        if (recipient?.email) {
+          await this.notificationService.queueTicketEmail({
+            userId: recipient.id,
+            email: recipient.email,
+            ticketId: t.ticketId,
+            eventName: event?.title ?? t.eventId,
+          });
+        }
+      } catch (err) {
+        this.logger.warn(
+          `Could not queue transfer notification for ticket ${t.ticketId}: ${(err as Error).message}`,
+        );
+      }
     }
   }
 

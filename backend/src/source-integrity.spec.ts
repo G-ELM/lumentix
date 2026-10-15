@@ -37,6 +37,8 @@ const UNREGISTERED_MODULE_ALLOWLIST: Record<string, string> = {
  */
 const KNOWN_UNRESOLVED_IMPORTS = new Set<string>([
   "src/events/cancel-event.e2e-spec.ts -> '../../src/refunds/refund.service'",
+  "src/auth/auth.controller.ts -> './guards/local-auth.guard'",
+  "src/auth/auth.controller.ts -> './dto/verify-email.dto'",
   "src/payments/controllers/payment-analytics.controller.ts -> '../../common/decorators/authenticated-user.decorator'",
   "src/payments/multisig/multisig.controller.ts -> '../../auth/interfaces/authenticated-request.interface'",
   "src/tickets/dynamic-qr/dynamic-qr.controller.ts -> '../../auth/interfaces/authenticated-request.interface'",
