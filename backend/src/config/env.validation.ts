@@ -33,6 +33,9 @@ export const envValidationSchema = Joi.object({
   RATE_LIMIT_PER_API_KEY: Joi.number().integer().positive().default(1000),
   RATE_LIMIT_BLOCK_SECONDS: Joi.number().integer().positive().default(900),
 
+  // Age proof signing (falls back to JWT_SECRET when unset)
+  ZKP_SIGNING_SECRET: Joi.string().min(32).optional(),
+
   // Ticket Signing
   TICKET_SIGNING_SECRET: Joi.string().required(),
   TICKET_SIGNING_PUBLIC_KEY: Joi.string().required(),

@@ -46,7 +46,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { StreamingModule } from './streaming/streaming.module';
 import { DecentralizedStorageModule } from './decentralized-storage/decentralized-storage.module';
 import { ChatModule } from './chat/chat.module';
-import { ZkpModule } from './zkp/zkp.module';
+import { AgeVerificationModule } from './age-verification/age-verification.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { MerchModule } from './merch/merch.module';
 import { UpgradeAuctionModule } from './upgrade-auction/upgrade-auction.module';
@@ -155,7 +155,7 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     StreamingModule,
     DecentralizedStorageModule,
     ChatModule,
-    ZkpModule,
+    AgeVerificationModule,
     WorkspaceModule,
     TelemetryModule,
     MerchModule,
