@@ -1,4 +1,4 @@
- import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -193,6 +193,12 @@ import { RateLimitGuard } from './common/guards/rate-limit.guard';
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      // Honour @Exclude() on entity fields (e.g. User.mfaConfig,
+      // passwordHash) so sensitive columns never reach HTTP responses.
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor,
     },
     {
       provide: APP_FILTER,

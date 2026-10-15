@@ -386,7 +386,14 @@ export class UsersService {
   }
 
   private sanitize(user: User): Omit<User, 'passwordHash'> {
-    const { passwordHash, ...sanitized } = user;
+    // Return a User *instance* (not a spread plain object) so the global
+    // ClassSerializerInterceptor can still honour the entity's @Exclude()
+    // metadata (mfaConfig, mfaSessions, googleId, verification tokens…).
+    const sanitized = Object.assign(
+      Object.create(Object.getPrototypeOf(user) as object) as User,
+      user,
+    );
+    delete (sanitized as Partial<User>).passwordHash;
     return sanitized;
   }
 }
