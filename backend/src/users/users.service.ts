@@ -323,6 +323,20 @@ export class UsersService {
     return this.sanitize(newUser);
   }
 
+  async findByStellarPublicKey(publicKey: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { stellarPublicKey: publicKey } });
+  }
+
+  /** Creates a passwordless account for a wallet-only sign-in. */
+  async createWalletUser(publicKey: string): Promise<User> {
+    const user = this.usersRepository.create({
+      email: `${publicKey.toLowerCase()}@wallet.lumentix.local`,
+      passwordHash: '',
+      stellarPublicKey: publicKey,
+    });
+    return this.usersRepository.save(user);
+  }
+
   async findByGoogleId(googleId: string) {
     return this.usersRepository.findOne({ where: { googleId } });
   }

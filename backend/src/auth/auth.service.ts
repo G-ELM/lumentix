@@ -9,6 +9,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
+import { UserStatus } from '../users/enums/user-status.enum';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
@@ -53,6 +54,35 @@ export class AuthService {
     const { access_token } = this.signToken((user as any).id, (user as any).role);
     const refresh_token = await this.issueRefreshToken((user as any).id);
     return { access_token, refresh_token };
+  }
+
+  /**
+   * Validates email/password credentials for the local strategy. Returns the
+   * user without its password hash, or null when the credentials are wrong.
+   * Blocked and deleted accounts are rejected with 401.
+   */
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<{ id: string; email: string; role: string } | null> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user || !user.passwordHash) return null;
+
+    const matches = await bcrypt.compare(password, user.passwordHash);
+    if (!matches) return null;
+
+    if (user.status === UserStatus.BLOCKED) {
+      throw new UnauthorizedException('User account is blocked.');
+    }
+    if ((user as any).deletedAt) {
+      throw new UnauthorizedException('User account is deleted.');
+    }
+
+    return { id: user.id, email: user.email, role: user.role };
+  }
+
+  async getProfile(userId: string) {
+    return this.usersService.findById(userId);
   }
 
   async login(
@@ -342,6 +372,15 @@ export class AuthService {
     });
 
     return { verified: true };
+  }
+
+  /** Resend a verification email by address. Never reveals whether the address is registered. */
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const message = 'If the email exists and is not yet verified, a new verification email has been sent.';
+    const user = await this.usersService.findByEmail(email);
+    if (!user || user.emailVerified) return { message };
+    await this.sendVerificationEmail(user.id);
+    return { message };
   }
 
   async resendVerificationEmail(userId: string): Promise<void> {

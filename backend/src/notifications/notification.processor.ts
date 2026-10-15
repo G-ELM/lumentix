@@ -64,7 +64,9 @@ export class NotificationProcessor {
     this.logger.log(`Sending ticket email for job ${job.id}...`);
     const { email, ticketId, eventName, pdfUrl, eventDate, eventLocation } = job.data;
     const subject = `Your ticket for ${eventName}`;
-    await this.mailerService.send(email, subject, {
+    await this.mailerService.send({
+      to: email,
+      subject: subject,
       template: 'ticket-ready',
       context: {
         name: email,
@@ -90,7 +92,7 @@ export class NotificationProcessor {
         <p>Sale amount: <strong>${amount} ${currency}</strong></p>
       </div>
     `;
-    await this.mailerService.send(email, subject, html);
+    await this.mailerService.send({ to: email, subject, html });
     return { sent: true };
   }
 
@@ -100,7 +102,9 @@ export class NotificationProcessor {
     this.logger.log(`Sending refund email for job ${job.id}...`);
     const { email, amount, refundId, currency, eventTitle, transactionHash } = job.data;
     const subject = 'Your refund has been processed';
-    await this.mailerService.send(email, subject, {
+    await this.mailerService.send({
+      to: email,
+      subject: subject,
       template: 'refund-issued',
       context: {
         name: email,
@@ -126,7 +130,7 @@ export class NotificationProcessor {
         <p>Thank you, <strong>${sponsorName}</strong>, for your support!</p>
       </div>
     `;
-    await this.mailerService.send(email, subject, html);
+    await this.mailerService.send({ to: email, subject, html });
   }
 
   @Process('sendSponsorConfirmedEmail')
@@ -154,7 +158,7 @@ export class NotificationProcessor {
         <p>Transaction: <strong>${transactionHash}</strong></p>
       </div>
     `;
-    await this.mailerService.send(email, subject, html);
+    await this.mailerService.send({ to: email, subject, html });
     return { sent: true };
   }
 
@@ -184,7 +188,7 @@ export class NotificationProcessor {
         <p>Please try again or contact support if the issue persists.</p>
       </div>
     `;
-    await this.mailerService.send(email, subject, html);
+    await this.mailerService.send({ to: email, subject, html });
     return { sent: true };
   }
 
@@ -206,7 +210,9 @@ export class NotificationProcessor {
     }
 
     const subject = `Event Cancelled: ${eventTitle}`;
-    await this.mailerService.send(user.email, subject, {
+    await this.mailerService.send({
+      to: user.email,
+      subject: subject,
       template: 'event-cancelled',
       context: {
         name: user.email,
@@ -244,7 +250,7 @@ export class NotificationProcessor {
         <p>Congratulations! Your event <strong>${eventTitle}</strong> has been published and is now accepting registrations.</p>
       </div>
     `;
-    await this.mailerService.send(user.email, subject, html);
+    await this.mailerService.send({ to: user.email, subject, html });
     return { sent: true };
   }
 
@@ -273,7 +279,7 @@ export class NotificationProcessor {
         <p>Your event <strong>${eventTitle}</strong> has been marked as completed. Thank you for hosting on Lumentix!</p>
       </div>
     `;
-    await this.mailerService.send(user.email, subject, html);
+    await this.mailerService.send({ to: user.email, subject, html });
     return { sent: true };
   }
 
@@ -304,7 +310,7 @@ export class NotificationProcessor {
         <p>Your loyalty tier has changed from <strong>${previousTier}</strong> to <strong>${newTier}</strong>.</p>
       </div>
     `;
-    await this.mailerService.send(user.email, subject, html);
+    await this.mailerService.send({ to: user.email, subject, html });
     return { sent: true };
   }
 
