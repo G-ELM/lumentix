@@ -189,11 +189,13 @@ async function request<T>(
   const url = `${PROXY_BASE}/${path}`;
 
   const res = await fetchWithRetry(url, {
+    ...options,
+    // Spread options first so the merged headers below are not replaced by the
+    // caller's headers object (which would drop the default Content-Type).
     headers: {
       "Content-Type": "application/json",
       ...(options.headers ?? {}),
     },
-    ...options,
   });
 
   if (res.status === 401 && !isRetry) {
@@ -221,6 +223,9 @@ async function request<T>(
   if (res.status === 204) return null as T;
   return res.json();
 }
+
+/** Low-level proxied request, exposed so callers (and tests) can pass custom options. */
+export const apiRequest = request;
 
 export async function apiGet<T>(path: string): Promise<T> {
   return request<T>(path, { method: "GET" });

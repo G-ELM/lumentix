@@ -10,13 +10,17 @@ import type { RecommendationResponse } from "@/types/recommendation";
 const getRecommendations = vi.fn();
 const updateUserPreferences = vi.fn();
 
+// The component calls `apiClient.getRecommendations` (there is no top-level export).
 vi.mock("@/lib/api-client", () => ({
-  getRecommendations: (...args: unknown[]) => getRecommendations(...args),
-  updateUserPreferences: (...args: unknown[]) => updateUserPreferences(...args),
+  apiClient: {
+    getRecommendations: (...args: unknown[]) => getRecommendations(...args),
+    updateUserPreferences: (...args: unknown[]) => updateUserPreferences(...args),
+  },
 }));
 
+const mockUseAuth = vi.fn();
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: "user-1", email: "a@b.c", role: "attendee" }, isAuthenticated: true }),
+  useAuth: () => mockUseAuth(),
 }));
 
 // eslint-disable-next-line import/first
@@ -24,6 +28,7 @@ import RecommendationStrip from "@/components/recommendations/RecommendationStri
 
 const recommendations: RecommendationResponse = {
   userId: "user-1",
+  generatedAt: "2026-05-01T09:00:00Z",
   recommendations: [
     {
       eventId: "evt-1",
@@ -52,6 +57,10 @@ const recommendations: RecommendationResponse = {
 describe("RecommendationStrip", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      user: { id: "user-1", email: "a@b.c", role: "attendee" },
+      isAuthenticated: true,
+    });
     getRecommendations.mockResolvedValue(recommendations);
   });
 
@@ -69,12 +78,16 @@ describe("RecommendationStrip", () => {
     await waitFor(() =>
       expect(screen.getByLabelText("personalized recommendations")).toBeTruthy(),
     );
-    const region = screen.getByRole("region");
+    const region = screen.getByRole("complementary");
     expect(region).toHaveAttribute("aria-label", "personalized recommendations");
-    expect(region).toHaveTextContent("2 recommendations");
+    expect(region).toHaveTextContent("2 suggestions");
   });
 
   it("sorts suggestions by descending score before rendering", async () => {
+    getRecommendations.mockResolvedValue({
+      ...recommendations,
+      recommendations: [...recommendations.recommendations].reverse(),
+    });
     render(<RecommendationStrip />);
     const links = await screen.findAllByRole("link");
     const scores = links.map((link) => Number(link.textContent?.match(/(\d+)%/)?.[1]));
@@ -82,7 +95,11 @@ describe("RecommendationStrip", () => {
   });
 
   it("renders nothing when the recommendations list is empty", async () => {
-    getRecommendations.mockResolvedValue({ userId: "user-1", recommendations: [] });
+    getRecommendations.mockResolvedValue({
+      userId: "user-1",
+      recommendations: [],
+      generatedAt: "2026-05-01T09:00:00Z",
+    });
     const { container } = render(<RecommendationStrip />);
     await waitFor(() => expect(container).toBeEmptyDOMElement());
   });
@@ -94,7 +111,7 @@ describe("RecommendationStrip", () => {
   });
 
   it("shows no strip when the current user is anonymous", async () => {
-    vi.mocked(useAuth).mockReturnValue({ user: null, isAuthenticated: false });
+    mockUseAuth.mockReturnValue({ user: null, isAuthenticated: false });
     const { container } = render(<RecommendationStrip />);
     expect(container).toBeEmptyDOMElement();
   });
