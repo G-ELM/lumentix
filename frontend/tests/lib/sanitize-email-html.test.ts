@@ -54,3 +54,112 @@ describe('sanitizeEmailHtml', () => {
     expect(out).toContain('color:red');
   });
 });
+
+describe('sanitizeEmailHtml — obfuscated javascript: URLs (#1396)', () => {
+  const obfuscated = [
+    'java\tscript:alert(1)',
+    'java\nscript:alert(1)',
+    'java\rscript:alert(1)',
+    'java script:alert(1)',
+    '   javascript:alert(1)',
+    'JaVaScRiPt:alert(1)',
+  ];
+
+  it.each(obfuscated)('drops an obfuscated href %#', (payload) => {
+    const out = sanitizeEmailHtml(`<a href="${payload}">click</a>`);
+    expect(out).not.toContain('href');
+    expect(out).toContain('click');
+  });
+
+  it('drops vbscript: URLs', () => {
+    const out = sanitizeEmailHtml('<a href="vbscript:msgbox(1)">x</a>');
+    expect(out).not.toContain('href');
+    expect(out).not.toMatch(/vbscript/i);
+  });
+
+  it('drops data: URLs fail-closed', () => {
+    const out = sanitizeEmailHtml('<img src="data:text/html;base64,PHNjcmlwdD4=">');
+    expect(out).not.toContain('src');
+  });
+});
+
+describe('sanitizeEmailHtml — URL scheme allow-list (#1396)', () => {
+  it('keeps http, https, mailto and cid', () => {
+    expect(sanitizeEmailHtml('<a href="http://x.dev">a</a>')).toContain('href="http://x.dev"');
+    expect(sanitizeEmailHtml('<a href="https://x.dev">a</a>')).toContain('href="https://x.dev"');
+    expect(sanitizeEmailHtml('<a href="mailto:a@b.com">a</a>')).toContain('href="mailto:a@b.com"');
+    expect(sanitizeEmailHtml('<img src="cid:logo">')).toContain('src="cid:logo"');
+  });
+
+  it('drops schemes that are not allow-listed', () => {
+    expect(sanitizeEmailHtml('<a href="ftp://x.dev/a">a</a>')).not.toContain('href');
+    expect(sanitizeEmailHtml('<a href="blob:https://x.dev/abc">a</a>')).not.toContain('href');
+  });
+
+  it('keeps relative URLs (no scheme to abuse)', () => {
+    expect(sanitizeEmailHtml('<a href="/unsubscribe">u</a>')).toContain('href="/unsubscribe"');
+  });
+});
+
+describe('sanitizeEmailHtml — target=_blank hardening (#1396)', () => {
+  it('forces rel="noopener noreferrer" when target is kept', () => {
+    const out = sanitizeEmailHtml('<a href="https://x.dev" target="_blank">x</a>');
+    expect(out).toContain('target="_blank"');
+    expect(out).toContain('rel="noopener noreferrer"');
+  });
+
+  it('overrides an attacker-supplied rel', () => {
+    const out = sanitizeEmailHtml('<a href="https://x.dev" target="_blank" rel="opener">x</a>');
+    expect(out).toContain('rel="noopener noreferrer"');
+    expect(out).not.toContain('rel="opener"');
+  });
+
+  it('leaves anchors without target alone', () => {
+    const out = sanitizeEmailHtml('<a href="https://x.dev">x</a>');
+    expect(out).not.toContain('rel=');
+  });
+});
+
+describe('sanitizeEmailHtml — CSS hardening (#1396)', () => {
+  it('drops declarations containing CSS backslash escapes', () => {
+    const out = sanitizeEmailHtml(
+      '<div style="color:red;background:url(java\\script:alert(1))">x</div>',
+    );
+    expect(out).not.toMatch(/script/i);
+    expect(out).toContain('color:red');
+  });
+
+  it('drops url() declarations that are not http(s)', () => {
+    const out = sanitizeEmailHtml(
+      '<div style="color:blue;background:url(data:text/html,x);list-style:url(//evil.example/a.png)">x</div>',
+    );
+    expect(out).not.toMatch(/data:/i);
+    expect(out).not.toContain('evil.example');
+    expect(out).toContain('color:blue');
+  });
+
+  it('keeps http(s) url() declarations', () => {
+    const out = sanitizeEmailHtml(
+      '<div style="background:url(https://cdn.example/a.png)">x</div>',
+    );
+    expect(out).toContain('url(https://cdn.example/a.png)');
+  });
+});
+
+describe('sanitizeEmailHtml — srcset hardening (#1396)', () => {
+  it('drops the whole srcset when any candidate uses a bad scheme', () => {
+    const out = sanitizeEmailHtml(
+      '<img srcset="https://cdn.example/a.png 1x, javascript:alert(1) 2x">',
+    );
+    expect(out).not.toMatch(/javascript/i);
+    expect(out).not.toContain('srcset');
+  });
+
+  it('keeps a fully http(s) srcset', () => {
+    const out = sanitizeEmailHtml(
+      '<img srcset="https://cdn.example/a.png 1x, https://cdn.example/a@2x.png 2x">',
+    );
+    expect(out).toContain('cdn.example/a.png');
+    expect(out).toContain('srcset=');
+  });
+});
