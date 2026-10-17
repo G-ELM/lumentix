@@ -273,6 +273,22 @@ export const apiClient = {
       body: JSON.stringify(body),
     }),
 
+  walletChallenge: (publicKey: string) =>
+    request<{ nonce: string; accountAddress: string }>("/auth/wallet-challenge", {
+      method: "POST",
+      body: JSON.stringify({ publicKey }),
+    }),
+
+  walletVerify: (body: { nonce: string; signature: string; publicKey: string }) =>
+    request<{
+      walletAddress?: string;
+      access_token?: string;
+      refresh_token?: string;
+    }>("/auth/wallet-verify", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   getEvents: (params?: Record<string, string>) => {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
     return request<EventsResponse>(`/events${qs}`);
@@ -304,6 +320,7 @@ export const apiClient = {
       email: string;
       displayName: string | null;
       walletAddress: string | null;
+      stellarPublicKey?: string | null;
       emailOptOut: boolean;
       createdAt: string;
     }>("/users/me"),
@@ -357,6 +374,17 @@ export const apiClient = {
     request<{ id: string; displayName: string | null }>("/users/me", {
       method: "PATCH",
       body: JSON.stringify(body),
+    }),
+
+  patchPreferences: (body: { emailOptOut?: boolean }) =>
+    request<{ emailOptOut: boolean }>("/users/me/notification-preferences", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
+  deactivateAccount: () =>
+    request<void>("/users/me", {
+      method: "DELETE",
     }),
 
   getNotificationPreferences: () =>

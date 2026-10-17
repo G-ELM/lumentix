@@ -19,6 +19,7 @@ export const freighterMock = {
   getNetwork: vi.fn(),
   getNetworkDetails: vi.fn(),
   signTransaction: vi.fn(),
+  signMessage: vi.fn(),
 };
 
 /** Reset every mock to a healthy, unlocked, TESTNET wallet. */
@@ -38,6 +39,9 @@ export function resetFreighterMock(): void {
   freighterMock.signTransaction
     .mockReset()
     .mockResolvedValue({ signedTxXdr: 'signed-xdr', signerAddress: TEST_PUBLIC_KEY });
+  freighterMock.signMessage
+    .mockReset()
+    .mockResolvedValue({ signedMessage: 'signed-message', signerAddress: TEST_PUBLIC_KEY });
 }
 
 resetFreighterMock();
@@ -50,4 +54,5 @@ export const freighterModule = {
   getNetwork: (...args: unknown[]) => freighterMock.getNetwork(...args),
   getNetworkDetails: (...args: unknown[]) => freighterMock.getNetworkDetails(...args),
   signTransaction: (...args: unknown[]) => freighterMock.signTransaction(...args),
+  signMessage: (...args: unknown[]) => freighterMock.signMessage(...args),
 };
