@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { clearTokens } from '@/lib/auth/auth';
 
 interface User {
@@ -13,17 +14,18 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  logout: () => {},
+  logout: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -58,12 +60,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const logout = () => {
-    clearTokens();
+  const logout = async () => {
+    // Await revocation + cookie clearing before navigating: a client-side
+    // navigation can abort the in-flight POST, leaving the session (and the
+    // refresh token) alive.
+    await clearTokens();
     setUser(null);
-    if (typeof window !== 'undefined') {
-      window.location.href = '/';
-    }
+    router.replace('/');
+    router.refresh();
   };
 
   return (

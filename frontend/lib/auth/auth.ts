@@ -1,5 +1,12 @@
 export async function clearTokens(): Promise<void> {
-  await fetch("/api/auth/logout", { method: "POST" });
+  try {
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch {
+    // Logout must be resilient — the caller clears in-memory state regardless.
+  }
 }
 
 export function getAccessToken(): string | null {

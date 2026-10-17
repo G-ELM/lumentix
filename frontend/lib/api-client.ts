@@ -396,7 +396,12 @@ export const apiClient = {
       body: JSON.stringify(body),
     }),
 
-  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+  logout: async () => {
+    // Hit the Next.js route directly — routing it through `request()` would
+    // prepend PROXY_BASE and resolve to the wrong backend path.
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    return { ok: true };
+  },
 
   // Gamification — auth is attached by /api/proxy from the session cookie
   getMyGamificationProfile: () => request<GamificationProfile>("/gamification/profile/me"),
